@@ -1,0 +1,8 @@
+.mongodb
+node_modules
+dist
+*.env
+package-lock.json
+browser
+tmp
+src/configs/config.json
