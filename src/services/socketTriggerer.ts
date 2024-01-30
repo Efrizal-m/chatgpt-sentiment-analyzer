@@ -1,4 +1,3 @@
-import { captureException } from '@sentry/node';
 import axios, { AxiosError } from 'axios';
 import Logger from '../library/logger/Logger';
 import { appConfig } from '../configs/app.config';
@@ -24,25 +23,6 @@ export enum TriggerMeta {
 	UnprocessableEntity = 'unprocessable-entity',
 }
 
-export const triggerBasicInfluencer = async (keyword: string, code = TriggerMeta.Finish) => {
-	try {
-		console.log('socket basic influencer')
-		await axios.get(`${socketUrl}/trigger/news/influencer/basic`, {
-			params: { keyword, code },
-			headers: {
-				'Content-Type': 'application/json',
-				Accept: 'application/json',
-			},
-		});
-	} catch (error) {
-		if (error instanceof AxiosError) Logger.warn(error.message, error.response);
-		else Logger.err(error);
-
-		captureException(error);
-	}
-};
-
-
 export const triggerBasicSentiment = async (keyword: string, code = TriggerMeta.Finish) => {
 	try {
 		console.log('socket basic sentiment')
@@ -56,26 +36,5 @@ export const triggerBasicSentiment = async (keyword: string, code = TriggerMeta.
 	} catch (error) {
 		if (error instanceof AxiosError) Logger.warn(error.message, error.response);
 		else Logger.err(error);
-
-		captureException(error);
-	}
-};
-
-
-export const triggerBasicReport = async (keyword: string, code = TriggerMeta.Finish) => {
-	try {
-		console.log('socket basic report')
-		await axios.get(`${socketUrl}/trigger/news/report/basic`, {
-			params: { keyword, code },
-			headers: {
-				'Content-Type': 'application/json',
-				Accept: 'application/json',
-			},
-		});
-	} catch (error) {
-		if (error instanceof AxiosError) Logger.warn(error.message, error.response);
-		else Logger.err(error);
-
-		captureException(error);
 	}
 };
