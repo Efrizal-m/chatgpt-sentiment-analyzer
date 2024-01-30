@@ -1,8 +1,5 @@
-import * as Sentry from '@sentry/node';
-import * as Tracing from '@sentry/tracing';
-
 import express, { Express, NextFunction, Request, Response, Router } from 'express';
-import cors, { CorsOptions } from 'cors';
+import cors from 'cors';
 import 'ejs';
 import { ZodError } from 'zod';
 import { appConfig } from './configs/app.config';
@@ -13,19 +10,7 @@ import { TriggerMeta } from './services/socketTriggerer';
 import { startScheduler } from './scheduler/cron-job';
 
 export const initApp = async (routers: Router[] = []) => {
-	const app: Express = express();
-
-	Sentry.init({
-		dsn: appConfig.sentry.dsn,
-		integrations: [new Sentry.Integrations.Http({ tracing: true }), new Tracing.Integrations.Express({ app })],
-		tracesSampleRate: 1.0,
-		environment: appConfig.environment,
-	});
-
-	/** Middlewares */
-	app.use(Sentry.Handlers.requestHandler());
-	app.use(Sentry.Handlers.tracingHandler());
-	  
+	const app: Express = express();	  
 	app.use(cors());
 	  
 	app.use(express.json());
@@ -41,9 +26,6 @@ export const initApp = async (routers: Router[] = []) => {
 	app.get('/', (req: Request, res: Response) => res.json({ message: 'social-listening' }));
 	app.use(...routers);
 
-	/** Error Handlers */
-	app.use(Sentry.Handlers.errorHandler());
-
 	app.use((req: Request, res: Response<ApiResponse>, next: NextFunction) => {
 		const error = new Error('not found');
 		return res.status(404).json({ message: error.message });
@@ -53,10 +35,6 @@ export const initApp = async (routers: Router[] = []) => {
 	app.use((error: any, req: Request, res: Response<ApiResponse>, next: NextFunction) => {
 		if (error instanceof ZodError) {
 			Logger.warn('Zod Validation Error', error);
-			Sentry.captureException(error, (scope) => {
-				scope.setContext('Zod Error Details', { ...error });
-				return scope;
-			});
 			return res.status(422).json({
 				message: 'Zod Validation Error',
 				error: {
@@ -68,12 +46,6 @@ export const initApp = async (routers: Router[] = []) => {
 			});
 		} else if (error instanceof BaseError) {
 			Logger.warn(error);
-			if (['undefined-error', 'internal-error'].includes(error.code)) {
-				Sentry.captureException(error, (scope) => {
-					scope.setContext('Base Error Details', { ...error });
-					return scope;
-				});
-			}
 			return res.status(error.statusCode).json({
 				message: error.name,
 				error: {
@@ -84,7 +56,6 @@ export const initApp = async (routers: Router[] = []) => {
 			});
 		} else if (error instanceof Error) {
 			Logger.err(error);
-			Sentry.captureException(error);
 			return res.status(500).json({
 				message: error.name,
 				error: {
