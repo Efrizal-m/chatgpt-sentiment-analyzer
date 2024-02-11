@@ -1,2 +1,2 @@
-# chatgpt-sentiment-analyzer
+# keyword-analyzer
 init
